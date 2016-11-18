@@ -56,7 +56,7 @@ namespace zasio{
            return hdl.lock();
        }//}}}
        virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
-        private:
+        protected:
         void _start_accept() {//{{{
             connection_ptr conn = make_shared<connection>(_io_service);
             connection_hdl w(conn);
@@ -100,7 +100,7 @@ namespace zasio{
                 _io_service->stop();
             }//}}}
 
-        private:
+        protected:
         shared_ptr<asio::io_service> _io_service;
         shared_ptr<asio::ip::tcp::acceptor> _acceptor;
         shared_ptr<asio::signal_set> _signals;
