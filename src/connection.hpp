@@ -2,24 +2,28 @@
 #define ZOOZO_ZASIO_CONNECTION_HPP
 
 #include <boost/function.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 using namespace boost;
 
+using boost::weak_ptr;
 namespace zoozo{
 namespace zasio{
-    typedef shared_ptr<asio::ip::tcp::socket> socket_ptr;
-    typedef boost::function<void(socket_ptr)> message_handler;
+    class connection;
+    typedef weak_ptr<connection> connection_hdl;
+    typedef shared_ptr<connection> connection_ptr;
+    typedef boost::function<void(connection_hdl, std::string)> message_handler;
 
-    class connection{
+    class connection : public enable_shared_from_this<connection>{
         public:
         connection(shared_ptr<asio::io_service> io_service){//{{{
             _socket = make_shared<asio::ip::tcp::socket>(*io_service);
         }//}}}
         void start(){//{{{
-            _socket->async_read_some(boost::asio::buffer(data_, max_length),
-                    boost::bind(&connection::handle_read, this,
-                        boost::asio::placeholders::error,
-                        boost::asio::placeholders::bytes_transferred));
+            asio::async_read(get_socket(), _buffer, asio::transfer_at_least(1),
+                    bind(&connection::handle_read, shared_from_this(),
+                        asio::placeholders::error,
+                        asio::placeholders::bytes_transferred));
         }//}}}
         void stop(){//{{{
             boost::system::error_code ec;
@@ -37,42 +41,51 @@ namespace zasio{
             }
 
         }//}}}
+       void set_handle(connection_hdl conn_hdl){//{{{
+           _connection_hdl = conn_hdl;
+       }//}}}
         asio::ip::tcp::socket& get_socket(){//{{{
             return *_socket;
         }//}}}
-        void set_message_handler(message_handler m_handler){//{{{
+        void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
+        void send(const std::string& message){//{{{
+            asio::async_write(get_socket(),
+                    asio::buffer(message),
+                    bind(&connection::handle_write, shared_from_this(),
+                        asio::placeholders::error));
+        }//}}}
         private:
-        void handle_read(const boost::system::error_code& error, size_t bytes_transferred) {//{{{
+        void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
             if (!error)
             {
-                std::string str = "sss";
+                std::istream is(&_buffer);
+                is >> _message;
 
-                   if(_m_handler){
-                   _m_handler(_socket);
-                   }
-                boost::asio::async_write(*_socket,
-                        boost::asio::buffer(str),
-                        boost::bind(&connection::handle_write, this,
-                            boost::asio::placeholders::error));
+                if(_m_handler){
+                    _m_handler(_connection_hdl, _message);
+                }
             }
         }//}}}
-        void handle_write(const boost::system::error_code& error) {//{{{
+        void handle_write(const system::error_code& error) {//{{{
             if (!error) {
-                _socket->async_read_some(boost::asio::buffer(data_, max_length),
-                        boost::bind(&connection::handle_read, this,
-                            boost::asio::placeholders::error,
-                            boost::asio::placeholders::bytes_transferred));
+                asio::async_read(get_socket(), _buffer, asio::transfer_at_least(1),
+                        bind(&connection::handle_read, shared_from_this(),
+                            asio::placeholders::error,
+                            asio::placeholders::bytes_transferred));
             }
-        }//}}}
+        }//}}}
+
 
         shared_ptr<asio::ip::tcp::socket> _socket;
         enum { max_length = 1024 };
         char data_[max_length];
         message_handler _m_handler;
+        std::string _message;
+        asio::streambuf _buffer;
+        connection_hdl  _connection_hdl;
     };
-    typedef shared_ptr<connection> connection_ptr;
 }
 }
 

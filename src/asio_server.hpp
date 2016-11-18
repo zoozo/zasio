@@ -17,7 +17,7 @@ namespace zasio{
         asio_server(){//{{{
             _connection_manager = make_shared<connection_manager>();
             init_asio();
-            set_message_handler(boost::bind(&asio_server::on_message, this, ::_1));
+            set_message_handler(boost::bind(&asio_server::on_message, this, ::_1, ::_2));
         }//}}}
         void init_asio(){//{{{
             //_io_service =  new asio::io_service();
@@ -36,11 +36,16 @@ namespace zasio{
         void set_message_handler(message_handler m_handler){
             _m_handler = m_handler;
         }
-        virtual void on_message(socket_ptr socket) = 0;
+        virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
+       connection_ptr get_conn_from_hdl(connection_hdl hdl){//{{{
+           return hdl.lock();
+       }//}}}
         private:
         void start_accept()
         {
-            shared_ptr<connection> conn = make_shared<connection>(_io_service);
+            connection_ptr conn = make_shared<connection>(_io_service);
+            connection_hdl w(conn);
+            conn->set_handle(w);
             conn->set_message_handler(_m_handler);
             _acceptor->async_accept(conn->get_socket(),
                     boost::bind(&asio_server::handle_accept, this, conn,
