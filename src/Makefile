@@ -1,5 +1,5 @@
 UP_CC = g++
-LIB = -lboost_system -lpthread
+LIB = -lboost_system -lboost_thread -lpthread
 INC = 
 CPPS = server.cpp \
 

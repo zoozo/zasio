@@ -6,6 +6,8 @@
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
+#include <vector>
 #include "connection_manager.hpp"
 
 using namespace boost;
@@ -28,39 +30,48 @@ namespace zasio{
         }//}}}
         void init(uint16_t port){//{{{
             _listen(port);
-            start_accept();
+            _start_accept();
         }//}}}
-        void run(){
+        void run(){//{{{
             _io_service->run();
+        }//}}}
+        void run(std::size_t size){
+            std::vector<boost::shared_ptr<boost::thread> > threads;
+
+            for (std::size_t i = 0; i < size; ++i)
+            {
+                boost::shared_ptr<boost::thread> thread(new boost::thread(
+                            boost::bind(&asio_server::run, this)));
+                threads.push_back(thread);
+            }
+
+            // Wait for all threads in the pool to exit.
+            for (std::size_t i = 0; i < threads.size(); ++i)
+                threads[i]->join();
         }
-        void set_message_handler(message_handler m_handler){
+        void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
-        }
-        virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
+        }//}}}
        connection_ptr get_conn_from_hdl(connection_hdl hdl){//{{{
            return hdl.lock();
        }//}}}
+       virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
         private:
-        void start_accept()
-        {
+        void _start_accept() {//{{{
             connection_ptr conn = make_shared<connection>(_io_service);
             connection_hdl w(conn);
             conn->set_handle(w);
             conn->set_message_handler(_m_handler);
             _acceptor->async_accept(conn->get_socket(),
-                    boost::bind(&asio_server::handle_accept, this, conn,
+                    boost::bind(&asio_server::_handle_accept, this, conn,
                         asio::placeholders::error));
-        }
-
-        void handle_accept(shared_ptr<connection> conn, const system::error_code& error)
-        {
-            if (!error)
-            {
-                _connection_manager->start(conn);
+        }//}}}
+        void _handle_accept(connection_ptr conn, const system::error_code& error) {//{{{
+            if (!error) { _connection_manager->start(conn);
             }
 
-            start_accept();
-        }
+            _start_accept();
+        }//}}}
         void _listen(uint16_t port) {//{{{
             asio::ip::tcp::endpoint ep(asio::ip::tcp::v4(), port);
             _listen(ep);
@@ -89,7 +100,6 @@ namespace zasio{
                 _io_service->stop();
             }//}}}
 
-        //asio::io_service* _io_service;
         private:
         shared_ptr<asio::io_service> _io_service;
         shared_ptr<asio::ip::tcp::acceptor> _acceptor;

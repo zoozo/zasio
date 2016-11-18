@@ -77,10 +77,7 @@ namespace zasio{
             }
         }//}}}
 
-
         shared_ptr<asio::ip::tcp::socket> _socket;
-        enum { max_length = 1024 };
-        char data_[max_length];
         message_handler _m_handler;
         std::string _message;
         asio::streambuf _buffer;
