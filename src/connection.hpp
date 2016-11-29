@@ -56,6 +56,12 @@ namespace zasio{
                     bind(&connection::handle_write, shared_from_this(),
                         asio::placeholders::error));
         }//}}}
+        void send_then_read(const std::string& message){//{{{
+            asio::async_write(get_socket(),
+                    asio::buffer(message),
+                    bind(&connection::handle_write_then_read, shared_from_this(),
+                        asio::placeholders::error));
+        }//}}}
         private:
         void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
             if (!error)
@@ -68,12 +74,16 @@ namespace zasio{
                 }
             }
         }//}}}
-        void handle_write(const system::error_code& error) {//{{{
+        void handle_write_then_read(const system::error_code& error) {//{{{
             if (!error) {
                 asio::async_read(get_socket(), _buffer, asio::transfer_at_least(1),
                         bind(&connection::handle_read, shared_from_this(),
                             asio::placeholders::error,
                             asio::placeholders::bytes_transferred));
+            }
+        }//}}}
+        void handle_write(const system::error_code& error) {//{{{
+            if (!error) {
             }
         }//}}}
 

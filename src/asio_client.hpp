@@ -1,3 +1,6 @@
+#ifndef ZOOZO_ZASIO_CLIENT_HPP
+#define ZOOZO_ZASIO_CLIENT_HPP
+
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -8,12 +11,12 @@ using namespace boost;
 
 namespace zoozo{
 namespace zasio{
-typedef function<void(std::string)> message_handler;
+typedef function<void(std::string)> client_message_handler;
 class asio_client {
     public:
     asio_client(){//{{{
         init_asio();
-        set_message_handler(bind(&asio_client::on_message, this, ::_1));
+        set_client_message_handler(bind(&asio_client::on_message, this, ::_1));
     }//}}}
     void init_asio(){//{{{
         _io_service = make_shared<asio::io_service>();
@@ -28,7 +31,7 @@ class asio_client {
     void run(){//{{{
         _io_service->run();
     }//}}}
-    void set_message_handler(message_handler m_handler){//{{{
+    void set_client_message_handler(client_message_handler m_handler){//{{{
         _m_handler = m_handler;
     }//}}}
     virtual void on_message(std::string& message) = 0;
@@ -82,7 +85,9 @@ class asio_client {
     shared_ptr<asio::signal_set> _signals;
     asio::streambuf _buffer;
     std::string _message;
-    message_handler _m_handler;
+    client_message_handler _m_handler;
 };
 }
 }
+
+#endif

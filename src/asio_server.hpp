@@ -9,6 +9,8 @@
 #include <boost/thread.hpp>
 #include <vector>
 #include "connection_manager.hpp"
+#include "exception.hpp"
+#include "logger.hpp"
 
 using namespace boost;
 
@@ -16,7 +18,7 @@ namespace zoozo{
 namespace zasio{
     class asio_server{
         public:
-        asio_server(){//{{{
+        asio_server():_status(1){//{{{
             _connection_manager = make_shared<connection_manager>();
             init_asio();
             set_message_handler(boost::bind(&asio_server::on_message, this, ::_1, ::_2));
@@ -28,14 +30,23 @@ namespace zasio{
             _signals = make_shared<asio::signal_set>(*_io_service, SIGINT, SIGTERM, SIGQUIT);
             _signals->async_wait(bind(&asio_server::_handle_stop, this));
         }//}}}
+        void init(int type, uint16_t port){//{{{
+            _connection_manager->set_type(type);
+            _listen(port);
+            _start_accept();
+        }//}}}
         void init(uint16_t port){//{{{
             _listen(port);
             _start_accept();
         }//}}}
+        void set_logger(shared_ptr<logger> logger){//{{{
+            _logger = logger;
+        }//}}}
         void run(){//{{{
+            _logger->write(trivial::info, __FUNCTION__);
             _io_service->run();
         }//}}}
-        void run(std::size_t size){
+        void run(std::size_t size){//{{{
             std::vector<boost::shared_ptr<boost::thread> > threads;
 
             for (std::size_t i = 0; i < size; ++i)
@@ -48,7 +59,7 @@ namespace zasio{
             // Wait for all threads in the pool to exit.
             for (std::size_t i = 0; i < threads.size(); ++i)
                 threads[i]->join();
-        }
+        }//}}}
         void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
@@ -66,9 +77,11 @@ namespace zasio{
                     boost::bind(&asio_server::_handle_accept, this, conn,
                         asio::placeholders::error));
         }//}}}
-        void _handle_accept(connection_ptr conn, const system::error_code& error) {//{{{
-            if (!error) { _connection_manager->start(conn);
+        void _handle_accept(connection_ptr conn, const system::error_code& error) {//{{{
+            if(error){
+                throw zexception(error, "handle accept error:" + error.message());
             }
+            _connection_manager->start(conn);
 
             _start_accept();
         }//}}}
@@ -88,24 +101,24 @@ namespace zasio{
             if (!ec) {
                 _acceptor->listen(asio::socket_base::max_connections, ec);
             }
-            else
-            {
+            else {
                 _handle_stop();
             }
         }//}}}
-            void _handle_stop()//{{{
-            {
+            void _handle_stop(){//{{{
+                _status = 0;
                 _acceptor->close();
-                //_connection_manager->stop_all();
+                _connection_manager->stop_all();
                 _io_service->stop();
             }//}}}
 
-        protected:
         shared_ptr<asio::io_service> _io_service;
         shared_ptr<asio::ip::tcp::acceptor> _acceptor;
         shared_ptr<asio::signal_set> _signals;
         shared_ptr<connection_manager> _connection_manager;
+        shared_ptr<logger> _logger;
         message_handler _m_handler;
+        int _status;
     };
 }
 }

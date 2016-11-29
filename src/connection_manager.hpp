@@ -10,12 +10,17 @@ namespace zoozo{
 namespace zasio{
     class connection_manager{
         public:
+        connection_manager():_type(1){ }
+
         void start(connection_ptr c)
         {
             _connections.insert(c);
-            c->start();
+            if(_type == 1) c->start();
         }
 
+        void set_type(const int type){
+            _type = type;
+        }
         void stop(connection_ptr c)
         {
             _connections.erase(c);
@@ -32,6 +37,7 @@ namespace zasio{
         }
         private:
         std::set<connection_ptr> _connections;
+        int _type;
     };
 }
 }
