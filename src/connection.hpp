@@ -13,6 +13,8 @@ namespace zasio{
     typedef weak_ptr<connection> connection_hdl;
     typedef shared_ptr<connection> connection_ptr;
     typedef boost::function<void(connection_hdl, std::string)> message_handler;
+    typedef boost::function<void(connection_hdl)> disconnect_handler;
+    typedef boost::function<void(connection_hdl)> close_handler;
 
     class connection : public enable_shared_from_this<connection>{
         public:
@@ -50,6 +52,12 @@ namespace zasio{
         void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
+        void set_disconnect_handler(disconnect_handler disconn_handler){//{{{
+            _disconn_handler = disconn_handler;
+        }//}}}
+        void set_close_handler(close_handler c_handler){//{{{
+            _close_handler = c_handler;
+        }//}}}
         void send(const std::string& message){//{{{
             asio::async_write(get_socket(),
                     asio::buffer(message),
@@ -64,14 +72,22 @@ namespace zasio{
         }//}}}
         private:
         void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
-            if (!error)
-            {
+            if(error == asio::error::eof){
+                    std::cout<<"call on_close:"<<__LINE__<<std::endl;
+                if(_close_handler){
+                    std::cout<<"call on_close:"<<__LINE__<<std::endl;
+                    _close_handler(_connection_hdl);
+                }
+                _disconn_handler(_connection_hdl);
+            }
+            else {
                 std::istream is(&_buffer);
                 is >> _message;
 
                 if(_m_handler){
                     _m_handler(_connection_hdl, _message);
                 }
+                start();
             }
         }//}}}
         void handle_write_then_read(const system::error_code& error) {//{{{
@@ -89,6 +105,8 @@ namespace zasio{
 
         shared_ptr<asio::ip::tcp::socket> _socket;
         message_handler _m_handler;
+        disconnect_handler _disconn_handler;
+        close_handler _close_handler;
         std::string _message;
         asio::streambuf _buffer;
         connection_hdl  _connection_hdl;

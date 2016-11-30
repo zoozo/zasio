@@ -21,19 +21,13 @@ namespace zasio{
         asio_server():_status(1){//{{{
             _connection_manager = make_shared<connection_manager>();
             init_asio();
-            set_message_handler(boost::bind(&asio_server::on_message, this, ::_1, ::_2));
+            set_disconnect_handler(boost::bind(&asio_server::on_disconnect, this, ::_1));
         }//}}}
         void init_asio(){//{{{
-            //_io_service =  new asio::io_service();
             _io_service = make_shared<asio::io_service>();
             _acceptor = make_shared<asio::ip::tcp::acceptor>(ref(*_io_service));
-            _signals = make_shared<asio::signal_set>(*_io_service, SIGINT, SIGTERM, SIGQUIT);
-            _signals->async_wait(bind(&asio_server::_handle_stop, this));
-        }//}}}
-        void init(int type, uint16_t port){//{{{
-            _connection_manager->set_type(type);
-            _listen(port);
-            _start_accept();
+ //           _signals = make_shared<asio::signal_set>(*_io_service, SIGINT, SIGTERM, SIGQUIT);
+ //           _signals->async_wait(bind(&asio_server::_handle_stop, this));
         }//}}}
         void init(uint16_t port){//{{{
             _listen(port);
@@ -63,19 +57,31 @@ namespace zasio{
         void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
+        void set_disconnect_handler(disconnect_handler disconn_handler){//{{{
+            _disconn_handler = disconn_handler;
+        }//}}}
+        void set_close_handler(close_handler c_handler){//{{{
+            _close_handler = c_handler;
+        }//}}}
        connection_ptr get_conn_from_hdl(connection_hdl hdl){//{{{
            return hdl.lock();
        }//}}}
-       virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
+//       virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
         protected:
         void _start_accept() {//{{{
             connection_ptr conn = make_shared<connection>(_io_service);
             connection_hdl w(conn);
             conn->set_handle(w);
             conn->set_message_handler(_m_handler);
+            conn->set_disconnect_handler(_disconn_handler);
+            conn->set_close_handler(_close_handler);
             _acceptor->async_accept(conn->get_socket(),
                     boost::bind(&asio_server::_handle_accept, this, conn,
                         asio::placeholders::error));
+        }//}}}
+        void on_disconnect(connection_hdl conn_hdl){//{{{
+            connection_ptr conn = get_conn_from_hdl(conn_hdl);
+            _connection_manager->stop(conn);
         }//}}}
         void _handle_accept(connection_ptr conn, const system::error_code& error) {//{{{
             if(error){
@@ -118,6 +124,8 @@ namespace zasio{
         shared_ptr<connection_manager> _connection_manager;
         shared_ptr<logger> _logger;
         message_handler _m_handler;
+        disconnect_handler _disconn_handler;
+        close_handler _close_handler;
         int _status;
     };
 }
