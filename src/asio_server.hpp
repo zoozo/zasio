@@ -37,7 +37,7 @@ namespace zasio{
             _logger = logger;
         }//}}}
         void run(){//{{{
-            _logger->write(trivial::info, __FUNCTION__);
+            _logger->write(trivial::trace, "asio server run.");
             _io_service->run();
         }//}}}
         void run(std::size_t size){//{{{
