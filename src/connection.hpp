@@ -82,7 +82,12 @@ namespace zasio{
             }
             else {
                 std::istream is(&_buffer);
-                is >> _message;
+                //is >> _message;
+                //std::getline(is, _message);
+                char c;
+                while(is.get(c)){
+                    _message += c;
+                }
 
                 if(_m_handler){
                     _m_handler(_connection_hdl, _message);
