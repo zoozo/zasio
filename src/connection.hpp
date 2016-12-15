@@ -73,9 +73,7 @@ namespace zasio{
         private:
         void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
             if(error == asio::error::eof){
-                    std::cout<<"call on_close:"<<__LINE__<<std::endl;
                 if(_close_handler){
-                    std::cout<<"call on_close:"<<__LINE__<<std::endl;
                     _close_handler(_connection_hdl);
                 }
                 _disconn_handler(_connection_hdl);
@@ -85,6 +83,7 @@ namespace zasio{
                 //is >> _message;
                 //std::getline(is, _message);
                 char c;
+                _message = "";
                 while(is.get(c)){
                     _message += c;
                 }
