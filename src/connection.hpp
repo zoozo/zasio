@@ -22,10 +22,15 @@ namespace zasio{
             _socket = make_shared<asio::ip::tcp::socket>(*io_service);
         }//}}}
         void start(){//{{{
+            /*
             asio::async_read(get_socket(), _buffer, asio::transfer_at_least(1),
                     bind(&connection::handle_read, shared_from_this(),
                         asio::placeholders::error,
                         asio::placeholders::bytes_transferred));
+            */
+            asio::async_read_until(get_socket(), _buffer, '\n',
+                    bind(&connection::handle_read, shared_from_this(),
+                        asio::placeholders::error));
         }//}}}
         void stop(){//{{{
             boost::system::error_code ec;
@@ -71,7 +76,9 @@ namespace zasio{
                         asio::placeholders::error));
         }//}}}
         private:
-        void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
+        //void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
+        //    std::cout<<bytes_transferred<<std::endl;
+        void handle_read(const system::error_code& error) {//{{{
             if(error == asio::error::eof){
                 if(_close_handler){
                     _close_handler(_connection_hdl);
@@ -81,25 +88,33 @@ namespace zasio{
             else {
                 std::istream is(&_buffer);
                 //is >> _message;
-                //std::getline(is, _message);
+                std::getline(is, _message);
+                /*
                 char c;
                 _message = "";
                 while(is.get(c)){
                     _message += c;
                 }
-
+                */
                 if(_m_handler){
                     _m_handler(_connection_hdl, _message);
                 }
                 start();
             }
         }//}}}
+        //}}}
         void handle_write_then_read(const system::error_code& error) {//{{{
             if (!error) {
+                /*
                 asio::async_read(get_socket(), _buffer, asio::transfer_at_least(1),
                         bind(&connection::handle_read, shared_from_this(),
                             asio::placeholders::error,
                             asio::placeholders::bytes_transferred));
+                */
+                //asio::async_read_until(get_socket(), _buffer, bind(&connection::match_new_line, shared_from_this()),
+                asio::async_read_until(get_socket(), _buffer, '\n',
+                        bind(&connection::handle_read, shared_from_this(),
+                            asio::placeholders::error));
             }
         }//}}}
         void handle_write(const system::error_code& error) {//{{{
