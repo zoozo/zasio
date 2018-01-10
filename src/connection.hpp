@@ -12,7 +12,7 @@ namespace zasio{
     class connection;
     typedef weak_ptr<connection> connection_hdl;
     typedef shared_ptr<connection> connection_ptr;
-    typedef boost::function<void(connection_hdl, std::string)> message_handler;
+    typedef boost::function<void(connection_hdl, shared_ptr<std::string>)> message_handler;
     typedef boost::function<void(connection_hdl)> disconnect_handler;
     typedef boost::function<void(connection_hdl)> close_handler;
 
@@ -20,6 +20,7 @@ namespace zasio{
         public:
         connection(shared_ptr<asio::io_service> io_service){//{{{
             _socket = make_shared<asio::ip::tcp::socket>(*io_service);
+            _message = boost::make_shared<std::string>();
         }//}}}
         void start(){//{{{
             /*
@@ -88,7 +89,7 @@ namespace zasio{
             else {
                 std::istream is(&_buffer);
                 //is >> _message;
-                std::getline(is, _message);
+                std::getline(is, *_message);
                 /*
                 char c;
                 _message = "";
@@ -126,7 +127,8 @@ namespace zasio{
         message_handler _m_handler;
         disconnect_handler _disconn_handler;
         close_handler _close_handler;
-        std::string _message;
+        shared_ptr<std::string> _message;
+        //std::string _message;
         asio::streambuf _buffer;
         connection_hdl  _connection_hdl;
     };
