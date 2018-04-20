@@ -12,7 +12,7 @@ namespace zasio{
         public:
         connection_manager(){ }
         ~connection_manager(){
-            std::cout<<__FUNCTION__<<std::endl;
+            //std::cout<<__FUNCTION__<<std::endl;
         }
 
         void start(connection_ptr c)
@@ -23,7 +23,7 @@ namespace zasio{
 
         void stop(connection_ptr c)
         {
-            std::cout<<__FUNCTION__<<std::endl;
+            //std::cout<<__FUNCTION__<<std::endl;
             _connections.erase(c);
             c->stop();
         }

@@ -84,7 +84,7 @@ namespace zasio{
         }//}}}
         private:
         void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
-            std::cout<<bytes_transferred<<std::endl;
+            //std::cout<<bytes_transferred<<std::endl;
         //void handle_read(const system::error_code& error) {//{{{
             if(error == asio::error::eof){
                 if(_close_handler){
