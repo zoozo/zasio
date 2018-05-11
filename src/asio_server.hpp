@@ -10,7 +10,7 @@
 #include <vector>
 #include "connection_manager.hpp"
 #include "exception.hpp"
-#include "logger.hpp"
+//#include "logger.hpp"
 
 using namespace boost;
 
@@ -33,11 +33,13 @@ namespace zasio{
             _listen(port);
             _start_accept();
         }//}}}
+        /*
         void set_logger(shared_ptr<logger> logger){//{{{
             _logger = logger;
         }//}}}
+        */
         void run(){//{{{
-            _logger->write(trivial::trace, "asio server run.");
+           // _logger->write(trivial::trace, "asio server run.");
             _io_service->run();
         }//}}}
         void run(std::size_t size){//{{{
@@ -122,7 +124,7 @@ namespace zasio{
         shared_ptr<asio::ip::tcp::acceptor> _acceptor;
         shared_ptr<asio::signal_set> _signals;
         shared_ptr<connection_manager> _connection_manager;
-        shared_ptr<logger> _logger;
+        //shared_ptr<logger> _logger;
         message_handler _m_handler;
         disconnect_handler _disconn_handler;
         close_handler _close_handler;
