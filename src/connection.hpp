@@ -24,6 +24,8 @@ namespace zasio{
         connection(shared_ptr<asio::io_service> io_service){//{{{
             _socket = make_shared<asio::ip::tcp::socket>(*io_service);
             _message = boost::make_shared<std::string>();
+            memset(_buffer, 0, sizeof _buffer);
+            _total_size = 0;
         }//}}}
         void start(){//{{{
             /*
@@ -91,6 +93,7 @@ namespace zasio{
         size_t read_complete(const system::error_code & err, size_t bytes) {
             if ( err) return 0;
             //size_t already_read_ = bytes;
+            //std::cout<<__FUNCTION__<<":"<<_buffer<<std::endl;
             if(_total_size == 0 && bytes > 12 && _buffer[bytes - 1] == 0x01){
                 try{
                     _total_size = std::stoi(&_buffer[12]) + 7 + bytes;
@@ -166,7 +169,6 @@ namespace zasio{
         //std::string _message;
         //asio::streambuf _buffer;
         char _buffer[MAX_LEN];
-        int _read_bytes;
         size_t _total_size;
         system::error_code _ec;
         connection_hdl  _connection_hdl;
