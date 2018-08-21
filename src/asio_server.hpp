@@ -33,6 +33,10 @@ namespace zasio{
             _listen(port);
             _start_accept();
         }//}}}
+        void init(const std::string& ip, uint16_t port){//{{{
+            _listen(ip, port);
+            _start_accept();
+        }//}}}
         /*
         void set_logger(shared_ptr<logger> logger){//{{{
             _logger = logger;
@@ -95,6 +99,10 @@ namespace zasio{
         }//}}}
         void _listen(uint16_t port) {//{{{
             asio::ip::tcp::endpoint ep(asio::ip::tcp::v4(), port);
+            _listen(ep);
+        }//}}}
+        void _listen(const std::string& ip, uint16_t port) {//{{{
+            asio::ip::tcp::endpoint ep(asio::ip::address::from_string(ip), port);
             _listen(ep);
         }//}}}
         void _listen(asio::ip::tcp::endpoint const & ep) {//{{{

@@ -11,12 +11,12 @@ using namespace boost;
 
 namespace zoozo{
 namespace zasio{
-typedef function<void(std::string)> client_message_handler;
+typedef function<void(std::string&)> client_message_handler;
 class asio_client {
     public:
     asio_client(){//{{{
         init_asio();
-        set_client_message_handler(bind(&asio_client::on_message, this, ::_1));
+        //set_client_message_handler(bind(&asio_client::on_message, this, ::_1));
     }//}}}
     void init_asio(){//{{{
         _io_service = make_shared<asio::io_service>();
@@ -34,7 +34,7 @@ class asio_client {
     void set_client_message_handler(client_message_handler m_handler){//{{{
         _m_handler = m_handler;
     }//}}}
-    virtual void on_message(std::string& message) = 0;
+    //virtual void on_message(std::string& message) = 0;
 
     private:
     void _handle_connect(const system::error_code& err) {//{{{

@@ -8,7 +8,7 @@
 using namespace boost;
 
 using boost::weak_ptr;
-#define MAX_LEN 1024 
+#define MAX_LEN 10240
 
 namespace zoozo{
 namespace zasio{
