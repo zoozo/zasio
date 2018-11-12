@@ -34,6 +34,10 @@ class asio_client {
     void set_client_message_handler(client_message_handler m_handler){//{{{
         _m_handler = m_handler;
     }//}}}
+    asio::ip::tcp::socket& get_socket(){//{{{
+        return *_socket;
+    }//}}}
+
     //virtual void on_message(std::string& message) = 0;
 
     private:
