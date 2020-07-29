@@ -11,7 +11,8 @@ using namespace boost;
 
 namespace zoozo{
 namespace zasio{
-typedef function<void(std::string&)> client_message_handler;
+//typedef function<void(std::string&)> client_message_handler;
+typedef function<void(asio::streambuf&)> client_message_handler;
 class asio_client {
     public:
     asio_client(){//{{{
@@ -54,11 +55,16 @@ class asio_client {
     }//}}}
     void _handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
         if (!error) {
+		/*
             std::istream is(&_buffer);
             is >> _message;
 
             if(_m_handler){
                 _m_handler(_message);
+            }
+	    */
+            if(_m_handler){
+                _m_handler(_buffer);
             }
             asio::async_read(*_socket, _buffer, asio::transfer_at_least(1),
                     bind(&asio_client::_handle_read, this,
@@ -88,7 +94,7 @@ class asio_client {
     shared_ptr<asio::ip::tcp::socket> _socket;
     shared_ptr<asio::signal_set> _signals;
     asio::streambuf _buffer;
-    std::string _message;
+    //std::string _message;
     client_message_handler _m_handler;
 };
 }
