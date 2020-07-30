@@ -12,7 +12,8 @@ using namespace boost;
 namespace zoozo{
 namespace zasio{
 //typedef function<void(std::string&)> client_message_handler;
-typedef function<void(asio::streambuf&)> client_message_handler;
+typedef function<void(char*)> client_message_handler;
+typedef function<size_t(char*, const system::error_code&, size_t)> client_read_comp_handler;
 class asio_client {
     public:
     asio_client(){//{{{
@@ -35,16 +36,23 @@ class asio_client {
     void set_client_message_handler(client_message_handler m_handler){//{{{
         _m_handler = m_handler;
     }//}}}
+    void set_client_read_comp_handler(client_read_comp_handler rc_handler){//{{{
+        _rc_handler = rc_handler;
+    }//}}}
     asio::ip::tcp::socket& get_socket(){//{{{
         return *_socket;
     }//}}}
 
-    //virtual void on_message(std::string& message) = 0;
+    //virtual void on_message(char*) = 0;
+    //virtual size_t read_complete(char*, const system::error_code&, size_t) = 0;
 
     private:
     void _handle_connect(const system::error_code& err) {//{{{
         if (!err) {
-            asio::async_read(*_socket, _buffer, asio::transfer_at_least(1),
+            asio::async_read(*_socket, asio::buffer(_buffer, BUFFER_SIZE), 
+                    bind(&asio_client::_read_complete, this, 
+                        _buffer, asio::placeholders::error, 
+                        asio::placeholders::bytes_transferred),
                     bind(&asio_client::_handle_read, this,
                         asio::placeholders::error,
                         asio::placeholders::bytes_transferred));
@@ -53,20 +61,21 @@ class asio_client {
             std::cout << "Error: " << err.message() << "\n";
         }
     }//}}}
+    size_t _read_complete(char* buff, const system::error_code& err, size_t bytes) {//{{{
+        if(!err && _rc_handler){
+            return _rc_handler(buff, err, bytes);
+        }
+        return 0;
+    }//}}}
     void _handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
         if (!error) {
-		/*
-            std::istream is(&_buffer);
-            is >> _message;
-
-            if(_m_handler){
-                _m_handler(_message);
-            }
-	    */
             if(_m_handler){
                 _m_handler(_buffer);
             }
-            asio::async_read(*_socket, _buffer, asio::transfer_at_least(1),
+            asio::async_read(*_socket, asio::buffer(_buffer, BUFFER_SIZE), 
+                    bind(&asio_client::_read_complete, this, 
+                        _buffer, asio::placeholders::error, 
+                        asio::placeholders::bytes_transferred),
                     bind(&asio_client::_handle_read, this,
                         asio::placeholders::error,
                         asio::placeholders::bytes_transferred));
@@ -93,9 +102,9 @@ class asio_client {
     shared_ptr<asio::io_service> _io_service;
     shared_ptr<asio::ip::tcp::socket> _socket;
     shared_ptr<asio::signal_set> _signals;
-    asio::streambuf _buffer;
-    //std::string _message;
+    char _buffer[BUFFER_SIZE];
     client_message_handler _m_handler;
+    client_read_comp_handler _rc_handler;
 };
 }
 }
