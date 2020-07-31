@@ -33,6 +33,12 @@ class asio_client {
     void run(){//{{{
         _io_service->run();
     }//}}}
+    void stop(){//{{{
+        _io_service->stop();
+    }//}}}
+    void close(){//{{{
+        _socket->close();
+    }//}}}
     void set_client_message_handler(client_message_handler m_handler){//{{{
         _m_handler = m_handler;
     }//}}}
@@ -58,7 +64,7 @@ class asio_client {
                         asio::placeholders::bytes_transferred));
         }
         else {
-            std::cout << "Error: " << err.message() << "\n";
+            //std::cout << "Error: " << err.message() << "\n";
         }
     }//}}}
     size_t _read_complete(char* buff, const system::error_code& err, size_t bytes) {//{{{
