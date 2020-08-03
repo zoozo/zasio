@@ -36,6 +36,9 @@ class asio_client {
     void stop(){//{{{
         _io_service->stop();
     }//}}}
+    void reset(){//{{{
+        _io_service->reset();
+    }//}}}
     void close(){//{{{
         _socket->close();
     }//}}}
