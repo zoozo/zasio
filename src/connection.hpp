@@ -12,7 +12,6 @@ using boost::weak_ptr;
 #define MAX_LEN 16384
 #endif
 
-namespace zoozo{
 namespace zasio{
     class connection;
     typedef weak_ptr<connection> connection_hdl;
@@ -170,7 +169,6 @@ namespace zasio{
         system::error_code _ec;
         connection_hdl  _connection_hdl;
     };
-}
 }
 
 #endif

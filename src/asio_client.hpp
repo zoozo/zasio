@@ -9,7 +9,6 @@
 
 using namespace boost;
 
-namespace zoozo{
 namespace zasio{
 //typedef function<void(std::string&)> client_message_handler;
 typedef function<void(char*)> client_message_handler;
@@ -137,7 +136,6 @@ class asio_client {
     client_accept_handler    _accept_handler;
     client_read_comp_handler _rc_handler;
 };
-}
 }
 
 #endif

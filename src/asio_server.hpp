@@ -14,7 +14,6 @@
 
 using namespace boost;
 
-namespace zoozo{
 namespace zasio{
     class asio_server{
         public:
@@ -88,8 +87,8 @@ namespace zasio{
             conn->set_handle(w);
             conn->set_message_handler(_m_handler);
             conn->set_read_comp_handler(_rc_handler);
-            conn->set_disconnect_handler(_disconn_handler);
-            conn->set_close_handler(_close_handler);
+            //conn->set_disconnect_handler(_disconn_handler);
+            //conn->set_close_handler(_close_handler);
             _acceptor->async_accept(conn->get_socket(),
                     boost::bind(&asio_server::_handle_accept, this, conn,
                         asio::placeholders::error));
@@ -156,7 +155,6 @@ namespace zasio{
         close_handler _close_handler;
         int _status;
     };
-}
 }
 
 #endif

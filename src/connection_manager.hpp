@@ -6,7 +6,6 @@
 
 using namespace boost;
 
-namespace zoozo{
 namespace zasio{
     class connection_manager{
         public:
@@ -37,7 +36,6 @@ namespace zasio{
         private:
         std::set<connection_ptr> _connections;
     };
-}
 }
 
 #endif

@@ -4,7 +4,6 @@
 #include <exception>
 #include <boost/system/error_code.hpp>
 
-namespace zoozo{
 namespace zasio{
     class zexception : public std::exception{
         public:
@@ -28,6 +27,5 @@ namespace zasio{
             boost::system::error_code _code;
             const std::string _what;
     };
-}
 }
 #endif
