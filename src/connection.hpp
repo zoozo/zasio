@@ -8,14 +8,17 @@
 using namespace boost;
 
 using boost::weak_ptr;
-#define MAX_LEN 10240
+#ifndef MAX_LEN 
+#define MAX_LEN 16384
+#endif
 
 namespace zoozo{
 namespace zasio{
     class connection;
     typedef weak_ptr<connection> connection_hdl;
     typedef shared_ptr<connection> connection_ptr;
-    typedef boost::function<void(connection_hdl, shared_ptr<std::string>, system::error_code)> message_handler;
+    typedef boost::function<void(connection_hdl, char*, system::error_code)> message_handler;
+    typedef boost::function<size_t(char*, const system::error_code&, size_t)> read_comp_handler;
     typedef boost::function<void(connection_hdl)> disconnect_handler;
     typedef boost::function<void(connection_hdl)> close_handler;
 
@@ -23,18 +26,13 @@ namespace zasio{
         public:
         connection(shared_ptr<asio::io_service> io_service){//{{{
             _socket = make_shared<asio::ip::tcp::socket>(*io_service);
-            _message = boost::make_shared<std::string>();
             memset(_buffer, 0, sizeof _buffer);
-            _total_size = 0;
         }//}}}
         void start(){//{{{
-            /*
-            get_socket().async_read_some( asio::buffer(_buffer, MAX_LEN),
-                    bind(&connection::handle_read, shared_from_this(),
-                        asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-            */
-            asio::async_read(get_socket(), asio::buffer(_buffer), 
-                    bind(&connection::read_complete, shared_from_this(),
+            asio::async_read(get_socket(), asio::buffer(_buffer, MAX_LEN), 
+                    bind(&connection::read_complete, 
+                        shared_from_this(),
+                        _buffer,
                         asio::placeholders::error,
                         asio::placeholders::bytes_transferred),
                     bind(&connection::handle_read, shared_from_this(),
@@ -54,11 +52,12 @@ namespace zasio{
                     _socket->close(ec);
                 }
             }catch(std::exception &e){
-                std::cout<<e.what()<<std::endl;
+                throw e;
+                //std::cout<<e.what()<<std::endl;
             }
 
             if(ec){
-                std::cout<<"stop connection error"<<std::endl;
+                //std::cout<<"stop connection error"<<std::endl;
             }
 
         }//}}}
@@ -71,6 +70,9 @@ namespace zasio{
         void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
+    void set_read_comp_handler(read_comp_handler rc_handler){//{{{
+        _rc_handler = rc_handler;
+    }//}}}
         void set_disconnect_handler(disconnect_handler disconn_handler){//{{{
             _disconn_handler = disconn_handler;
         }//}}}
@@ -90,44 +92,34 @@ namespace zasio{
                         asio::placeholders::error));
         }//}}}
         private:
-        size_t read_complete(const system::error_code & err, size_t bytes) {
-            if ( err) return 0;
-            //size_t already_read_ = bytes;
-            //std::cout<<__FUNCTION__<<":"<<_buffer<<std::endl;
-            if(_total_size == 0 && bytes > 12 && _buffer[bytes - 1] == 0x01){
-                try{
-                    _total_size = std::stoi(&_buffer[12]) + 7 + bytes;
-                }
-                catch(std::exception& e){
-                    _ec = system::errc::make_error_code(system::errc::protocol_error);
-                    return 0;
-                }
+        size_t read_complete(char* buff, const system::error_code & err, size_t bytes) {//{{{
+            if(!err && _rc_handler){
+                return _rc_handler(buff, err, bytes);
             }
-            if(_total_size > 0 && bytes == _total_size) return 0;
-            return 1;
-        }
+            return 0;
+        }//}}}
+        /*
+        size_t read_complete(char* buff, const system::error_code& err, size_t bytes) {//{{{
+            if(err){
+                return 0;
+            }
+            bool found = std::find(buff, buff + bytes, '\n') < buff + bytes;
+            return found ? 0 : 1;
+        }//}}}
+        */
+
         void handle_read(const system::error_code& error, size_t bytes_transferred) {//{{{
-            _total_size = 0;
-            *_message = "";
        // void handle_read(const system::error_code& error) {//{{{
             if(error == asio::error::eof){
                 if(_close_handler){
                     _close_handler(_connection_hdl);
                 }
                 _disconn_handler(_connection_hdl);
-                *_message = "";
             }
             else {
 
-/*
-                std::ostringstream out;
-                out<<&_buffer;
-                *_message=out.str();
-*/
-                *_message = _buffer;
-                memset(_buffer, 0, sizeof _buffer);
                 if(_m_handler){
-                    _m_handler(_connection_hdl, _message, _ec);
+                    _m_handler(_connection_hdl, _buffer, _ec);
                 }
                 _ec = system::errc::make_error_code(system::errc::success);
                 start();
@@ -136,13 +128,10 @@ namespace zasio{
         //}}}
         void handle_write_then_read(const system::error_code& error) {//{{{
             if (!error) {
-                /*
-            get_socket().async_read_some( asio::buffer(_buffer, MAX_LEN),
-                    bind(&connection::handle_read, shared_from_this(),
-                        asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-                */
-                asio::async_read(get_socket(), asio::buffer(_buffer),
-                        bind(&connection::read_complete, shared_from_this(),
+                asio::async_read(get_socket(), asio::buffer(_buffer, MAX_LEN),
+                        bind(&connection::read_complete, 
+                             shared_from_this(),
+                             _buffer,
                             asio::placeholders::error,
                             asio::placeholders::bytes_transferred),
                         bind(&connection::handle_read, shared_from_this(),
@@ -163,13 +152,10 @@ namespace zasio{
 
         shared_ptr<asio::ip::tcp::socket> _socket;
         message_handler _m_handler;
+        read_comp_handler _rc_handler;
         disconnect_handler _disconn_handler;
         close_handler _close_handler;
-        shared_ptr<std::string> _message;
-        //std::string _message;
-        //asio::streambuf _buffer;
         char _buffer[MAX_LEN];
-        size_t _total_size;
         system::error_code _ec;
         connection_hdl  _connection_hdl;
     };

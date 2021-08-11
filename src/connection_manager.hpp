@@ -33,7 +33,7 @@ namespace zasio{
             std::for_each(_connections.begin(), _connections.end(), bind(&connection::stop, _1));
             _connections.clear();
         }
-        std::set<connection_ptr> get_connections(){
+        const std::set<connection_ptr>& get_connections(){
             return _connections;
         }
         private:

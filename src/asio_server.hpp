@@ -63,6 +63,9 @@ namespace zasio{
         void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
+        void set_read_comp_handler(read_comp_handler rc_handler){//{{{
+            _rc_handler = rc_handler;
+        }//}}}
         void set_disconnect_handler(disconnect_handler disconn_handler){//{{{
             _disconn_handler = disconn_handler;
         }//}}}
@@ -73,12 +76,16 @@ namespace zasio{
            return hdl.lock();
        }//}}}
 //       virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
+        const std::set<connection_ptr>& get_connections(){
+            return _connection_manager->get_connections();
+        }
         protected:
         void _start_accept() {//{{{
             connection_ptr conn = make_shared<connection>(_io_service);
             connection_hdl w(conn);
             conn->set_handle(w);
             conn->set_message_handler(_m_handler);
+            conn->set_read_comp_handler(_rc_handler);
             conn->set_disconnect_handler(_disconn_handler);
             conn->set_close_handler(_close_handler);
             _acceptor->async_accept(conn->get_socket(),
@@ -134,6 +141,7 @@ namespace zasio{
         shared_ptr<connection_manager> _connection_manager;
         //shared_ptr<logger> _logger;
         message_handler _m_handler;
+        read_comp_handler _rc_handler;
         disconnect_handler _disconn_handler;
         close_handler _close_handler;
         int _status;
