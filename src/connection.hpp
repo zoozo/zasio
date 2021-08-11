@@ -20,6 +20,8 @@ namespace zasio{
     typedef boost::function<void(connection_hdl, char*, system::error_code)> message_handler;
     typedef boost::function<size_t(char*, const system::error_code&, size_t)> read_comp_handler;
     typedef boost::function<void(connection_hdl)> disconnect_handler;
+    typedef boost::function<void(connection_hdl)> disconnecting_handler;
+    typedef boost::function<void(connection_hdl)> accept_handler;
     typedef boost::function<void(connection_hdl)> close_handler;
 
     class connection : public enable_shared_from_this<connection>{
@@ -46,6 +48,15 @@ namespace zasio{
         }//}}}
         void stop(){//{{{
             boost::system::error_code ec;
+            if(_socket->is_open()){
+                _socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+                _socket->close(ec);
+            }
+
+        }//}}}
+        /*
+        void stop(){//{{{
+            boost::system::error_code ec;
             try{
                 if(_socket->is_open()){
                     _socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both);
@@ -53,14 +64,13 @@ namespace zasio{
                 }
             }catch(std::exception &e){
                 throw e;
-                //std::cout<<e.what()<<std::endl;
             }
 
             if(ec){
-                //std::cout<<"stop connection error"<<std::endl;
             }
 
         }//}}}
+        */
        void set_handle(connection_hdl conn_hdl){//{{{
            _connection_hdl = conn_hdl;
        }//}}}

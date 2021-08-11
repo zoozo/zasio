@@ -80,7 +80,6 @@ class asio_client {
                         asio::placeholders::bytes_transferred));
         }
         else {
-            //std::cout << "Error: " << err.message() << "\n";
         }
     }//}}}
     size_t _read_complete(char* buff, const system::error_code& err, size_t bytes) {//{{{

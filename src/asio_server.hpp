@@ -55,11 +55,17 @@ namespace zasio{
             for (std::size_t i = 0; i < threads.size(); ++i)
                 threads[i]->join();
         }//}}}
+        void set_accept_handler(accept_handler handler){//{{{
+            _accept_handler = handler;
+        }//}}}
         void set_message_handler(message_handler m_handler){//{{{
             _m_handler = m_handler;
         }//}}}
         void set_read_comp_handler(read_comp_handler rc_handler){//{{{
             _rc_handler = rc_handler;
+        }//}}}
+        void set_disconnecting_handler(disconnecting_handler disconning_handler){//{{{
+            _disconning_handler = disconning_handler;
         }//}}}
         void set_disconnect_handler(disconnect_handler disconn_handler){//{{{
             _disconn_handler = disconn_handler;
@@ -90,11 +96,17 @@ namespace zasio{
         }//}}}
         void on_disconnect(connection_hdl conn_hdl){//{{{
             connection_ptr conn = get_conn_from_hdl(conn_hdl);
+            if(_disconning_handler){
+                _disconning_handler(conn);
+            }
             _connection_manager->stop(conn);
         }//}}}
         void _handle_accept(connection_ptr conn, const system::error_code& error) {//{{{
             if(error){
                 throw zexception(error, "handle accept error:" + error.message());
+            }
+            if(_accept_handler){
+                _accept_handler(conn);
             }
             _connection_manager->start(conn);
 
@@ -136,9 +148,11 @@ namespace zasio{
         shared_ptr<asio::signal_set> _signals;
         shared_ptr<connection_manager> _connection_manager;
         //shared_ptr<logger> _logger;
+        accept_handler _accept_handler;
         message_handler _m_handler;
         read_comp_handler _rc_handler;
         disconnect_handler _disconn_handler;
+        disconnecting_handler _disconning_handler;
         close_handler _close_handler;
         int _status;
     };
