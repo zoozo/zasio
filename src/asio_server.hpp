@@ -37,11 +37,6 @@ namespace zasio{
             _listen(ip, port);
             _start_accept();
         }//}}}
-        /*
-        void set_logger(shared_ptr<logger> logger){//{{{
-            _logger = logger;
-        }//}}}
-        */
         void run(){//{{{
            // _logger->write(trivial::trace, "asio server run.");
             _io_service->run();
@@ -75,7 +70,8 @@ namespace zasio{
        connection_ptr get_conn_from_hdl(connection_hdl hdl){//{{{
            return hdl.lock();
        }//}}}
-//       virtual void on_message(connection_hdl conn_hdl, std::string& message) = 0;
+       virtual void on_message(connection_hdl conn_hdl, char* message) = 0;
+       virtual size_t read_complete(char* buff, const system::error_code& err, size_t bytes) = 0;
         const std::set<connection_ptr>& get_connections(){
             return _connection_manager->get_connections();
         }

@@ -121,6 +121,7 @@ namespace zasio{
                 if(_m_handler){
                     _m_handler(_connection_hdl, _buffer, _ec);
                 }
+                memset(_buffer, 0, bytes_transferred);
                 _ec = system::errc::make_error_code(system::errc::success);
                 start();
             }
