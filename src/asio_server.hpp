@@ -77,9 +77,9 @@ namespace zasio{
        }//}}}
        virtual void on_message(connection_hdl conn_hdl, char* message) = 0;
        virtual size_t read_complete(char* buff, const system::error_code& err, size_t bytes) = 0;
-        const std::set<connection_ptr>& get_connections(){
+        const std::set<connection_ptr>& get_connections(){//{{{
             return _connection_manager->get_connections();
-        }
+        }//}}}
         protected:
         void _start_accept() {//{{{
             connection_ptr conn = make_shared<connection>(_io_service);
@@ -87,8 +87,8 @@ namespace zasio{
             conn->set_handle(w);
             conn->set_message_handler(_m_handler);
             conn->set_read_comp_handler(_rc_handler);
-            //conn->set_disconnect_handler(_disconn_handler);
-            //conn->set_close_handler(_close_handler);
+            conn->set_disconnect_handler(_disconn_handler);
+            conn->set_close_handler(_close_handler);
             _acceptor->async_accept(conn->get_socket(),
                     boost::bind(&asio_server::_handle_accept, this, conn,
                         asio::placeholders::error));

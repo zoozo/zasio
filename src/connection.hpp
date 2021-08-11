@@ -123,7 +123,9 @@ namespace zasio{
                 if(_close_handler){
                     _close_handler(_connection_hdl);
                 }
-                _disconn_handler(_connection_hdl);
+                if(_disconn_handler){
+                    _disconn_handler(_connection_hdl);
+                }
             }
             else {
 
